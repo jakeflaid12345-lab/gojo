@@ -1,131 +1,67 @@
+# main.py
 import nextcord
 from nextcord.ext import commands
 import asyncio
-import random
-import os
 
-# -----------------------------
-# CONFIG
-# -----------------------------
-TOKEN = os.getenv("TOKEN")  # Railway reads this automatically
-GUILD_ID = 1439272009715548170  # <-- replace with your Discord server ID
+# =======================
+# === CONFIG SECTION ====
+# =======================
+BOT_TOKEN = "MTQ3NDg3NDQwNDQ1MzQ4MjU0Nw.G86nKT.c7IjjCGL250QgpHRJ2EXhr-gAy6klSdvukIi_U"  # <-- put your token here
+GUILD_ID = 1439272009715548170      # <-- replace with your server ID for slash commands to register fast
 
-intents = nextcord.Intents.all()
-bot = commands.Bot(intents=intents)
+# =======================
+# === BOT SETUP =========
+# =======================
+intents = nextcord.Intents.default()
+bot = commands.Bot(
+    command_prefix="!", 
+    intents=intents, 
+    debug_guilds=[GUILD_ID]  # registers slash commands immediately in your server
+)
 
-warn_data = {}
-
-# GOJO THEME COLORS
-GOJO_BLUE = 0x7DF9FF
-GOJO_PURPLE = 0xB266FF
-GOJO_RED = 0xED4245
-GOJO_YELLOW = 0xFEE75C
-
-def gojo_embed(title, color=GOJO_BLUE):
-    return nextcord.Embed(title=f"⚡ {title}", color=color)
-
-# -----------------------------
-# BOT READY
-# -----------------------------
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user}")
-    # sync commands globally (or per guild for instant)
-    await bot.sync_application_commands(guild_ids=[GUILD_ID])
-    await bot.change_presence(activity=nextcord.Game(name="Infinity GOJO Mode 😎"))
+    print(f"Bot is online as {bot.user}")
 
-# -----------------------------
-# /start RESTORE COMMAND
-# -----------------------------
-@bot.slash_command(description="Start GOJO restoration process", guild_ids=[GUILD_ID])
+# =======================
+# === SLASH COMMAND =====
+# =======================
+@bot.slash_command(description="Start the fake restoring process")
 async def start(interaction: nextcord.Interaction):
-    await interaction.response.send_message("⚡ Starting GOJO restoration...", ephemeral=True)
-    msg = await interaction.channel.send("⚡ Initializing...")
+    # Initial embed
+    embed = nextcord.Embed(
+        title="🛠️ Restoring Files...",
+        description="Initializing restore process...",
+        color=0x00ff00
+    )
+    await interaction.response.send_message(embed=embed)
+    message = await interaction.original_message()
 
-    restored = 0
-    total = random.randint(40, 120)
-    stages = [
-        "Reconnecting Shibuya nodes...",
-        "Decrypting Infinity...",
-        "Restoring Domain Expansion...",
-        "Synchronizing Cursed Energy...",
-        "Finalizing GOJO Recovery..."
+    # Fake progress steps
+    steps = [
+        "Connecting to server...",
+        "Scanning files...",
+        "Decrypting data...",
+        "Restoring files...",
+        "Finalizing..."
     ]
 
-    for stage in stages:
-        await asyncio.sleep(1.5)
-        restored += random.randint(5, 20)
+    for i, step in enumerate(steps):
+        await asyncio.sleep(2)  # wait 2 seconds per step
+        percent = int((i+1)/len(steps)*100)
+        # Optional fake progress bar
+        bars = int((i+1)/len(steps)*10)
+        progress_bar = "█" * bars + "-" * (10 - bars)
+        embed.description = f"{step}\n`[{progress_bar}] {percent}%`"
+        await message.edit(embed=embed)
 
-        embed = gojo_embed("GOJO RESTORATION", color=GOJO_BLUE)
-        embed.description = f"```{stage}```"
-        embed.add_field(name="Recovered", value=f"{restored}/{total}")
-        embed.add_field(name="System", value="🟢 Stable")
-        embed.set_footer(text="Gojo Bot | Infinite Coolness")
+    # Finished
+    embed.title = "✅ Restore Complete!"
+    embed.description = "All files have been restored successfully!"
+    embed.color = 0x00ffff
+    await message.edit(embed=embed)
 
-        await msg.edit(embed=embed, content=None)
-
-    final = gojo_embed("Restoration Complete", color=GOJO_PURPLE)
-    final.description = f"Recovered **{total}** members."
-    final.set_footer(text="Gojo Bot | Infinity Achieved ✨")
-    await msg.edit(embed=final)
-
-# -----------------------------
-# MODERATION COMMANDS
-# -----------------------------
-@bot.slash_command(description="Ban a member", guild_ids=[GUILD_ID])
-async def ban(interaction: nextcord.Interaction, member: nextcord.Member, reason: str = "No reason"):
-    await member.ban(reason=reason)
-    embed = gojo_embed("User Banned", GOJO_RED)
-    embed.add_field(name="Member", value=str(member))
-    embed.add_field(name="Reason", value=reason)
-    await interaction.response.send_message(embed=embed)
-
-@bot.slash_command(description="Kick a member", guild_ids=[GUILD_ID])
-async def kick(interaction: nextcord.Interaction, member: nextcord.Member, reason: str = "No reason"):
-    await member.kick(reason=reason)
-    embed = gojo_embed("User Kicked", GOJO_PURPLE)
-    embed.add_field(name="Member", value=str(member))
-    embed.add_field(name="Reason", value=reason)
-    await interaction.response.send_message(embed=embed)
-
-@bot.slash_command(description="Mute (timeout) a member", guild_ids=[GUILD_ID])
-async def mute(interaction: nextcord.Interaction, member: nextcord.Member, minutes: int):
-    await member.timeout(minutes * 60)
-    embed = gojo_embed("User Muted", GOJO_BLUE)
-    embed.add_field(name="Member", value=str(member))
-    embed.add_field(name="Duration", value=f"{minutes} minutes")
-    await interaction.response.send_message(embed=embed)
-
-@bot.slash_command(description="Warn a member", guild_ids=[GUILD_ID])
-async def warn(interaction: nextcord.Interaction, member: nextcord.Member, reason: str):
-    warn_data.setdefault(member.id, []).append(reason)
-    embed = gojo_embed("User Warned", GOJO_YELLOW)
-    embed.add_field(name="Member", value=str(member))
-    embed.add_field(name="Reason", value=reason)
-    embed.add_field(name="Total Warns", value=str(len(warn_data[member.id])))
-    await interaction.response.send_message(embed=embed)
-
-@bot.slash_command(description="Remove a warning", guild_ids=[GUILD_ID])
-async def unwarn(interaction: nextcord.Interaction, member: nextcord.Member):
-    if member.id in warn_data and warn_data[member.id]:
-        warn_data[member.id].pop()
-        embed = gojo_embed("Warn Removed", GOJO_BLUE)
-        embed.add_field(name="Member", value=str(member))
-        await interaction.response.send_message(embed=embed)
-    else:
-        await interaction.response.send_message("No warns found")
-
-@bot.slash_command(description="View warnings", guild_ids=[GUILD_ID])
-async def warns(interaction: nextcord.Interaction, member: nextcord.Member):
-    warns = warn_data.get(member.id, [])
-    if not warns:
-        await interaction.response.send_message("No warns")
-        return
-    embed = gojo_embed(f"Warnings for {member}", GOJO_YELLOW)
-    embed.description = "\n".join(warns)
-    await interaction.response.send_message(embed=embed)
-
-# -----------------------------
-# RUN BOT
-# -----------------------------
-bot.run(TOKEN)
+# =======================
+# === RUN BOT ===========
+# =======================
+bot.run(BOT_TOKEN)
